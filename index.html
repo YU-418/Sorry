@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>李铭畅对不起</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: #000;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+        }
+        
+        /* 星空背景 */
+        #starfield {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .star {
+            position: absolute;
+            background-color: #fff;
+            border-radius: 50%;
+            animation: twinkle 3s infinite ease-in-out;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+        }
+        
+        /* 飘动文字 - 简单直接的方式 */
+        .floating-text {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 18px;
+            font-weight: normal;
+            white-space: nowrap;
+            z-index: 2;
+            user-select: none;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+            pointer-events: auto;
+            cursor: default;
+            animation: floatUp linear infinite;
+        }
+        
+        @keyframes floatUp {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.9;
+            }
+            90% {
+                opacity: 0.9;
+            }
+            100% {
+                transform: translateY(-100px) translateX(var(--end-x));
+                opacity: 0;
+            }
+        }
+        
+        /* 音乐播放器 */
+        .music-player {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(20, 20, 40, 0.7);
+            border-radius: 50px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(100, 150, 255, 0.2);
+        }
+        
+        .music-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 200px;
+        }
+        
+        .music-cover {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .song-info {
+            flex: 1;
+        }
+        
+        .song-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .song-artist {
+            font-size: 12px;
+            color: #b0c4ff;
+        }
+        
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .player-btn {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .player-btn:hover {
+            background: rgba(100, 150, 255, 0.2);
+        }
+        
+        .play-btn {
+            background: rgba(100, 150, 255, 0.3);
+        }
+        
+        .volume-slider {
+            width: 80px;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            outline: none;
+        }
+        
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #7bdff2;
+            cursor: pointer;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .floating-text {
+                font-size: 16px;
+            }
+            
+            .music-player {
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 星空背景 -->
+    <div id="starfield"></div>
+    
+    <!-- 飘动文字容器 -->
+    <div id="floating-texts-container"></div>
+    
+    <!-- 音乐播放器 -->
+    <div class="music-player">
+        <div class="music-info">
+            <div class="music-cover">
+                <i class="fas fa-music"></i>
+            </div>
+            <div class="song-info">
+                <div class="song-title">大鱼</div>
+                <div class="song-artist">周深</div>
+            </div>
+        </div>
+        
+        <div class="player-controls">
+            <button id="playBtn" class="player-btn play-btn" title="播放">
+                <i id="playIcon" class="fas fa-play"></i>
+            </button>
+            
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <button id="volumeBtn" class="player-btn" title="音量">
+                    <i id="volumeIcon" class="fas fa-volume-up"></i>
+                </button>
+                <input id="volumeSlider" class="volume-slider" type="range" min="0" max="100" value="70">
+            </div>
+        </div>
+    </div>
+    
+    <!-- 音频元素 -->
+    <audio id="backgroundMusic" loop>
+        <!-- 这里需要替换为您的音乐文件路径 -->
+        <source src="sorry.mp3" type="audio/mpeg">
+        您的浏览器不支持音频播放。
+    </audio>
+
+    <script>
+        // 道歉词条
+        const apologyWords = [
+            "对不起李铭畅",
+            "我真的错了",
+            "真的很对不起",
+            "请你原谅我可以吗",
+            "我真的知道错了",
+            "以后不会让你难过了",
+            "以后绝对不会让你难过",
+            "请再给我一次机会可以吗",
+            "以后不会这样了",
+            "我保证一定会改",
+            "是我错了",
+            "以后不会让你失望了",
+            "我不该那样做",
+            "我真的很抱歉",
+            "希望能原谅我",
+            "别生气了",
+            "真的错了",
+            "原谅我可以吗",
+            "你骂我都可以",
+            "对不起对不起",
+            "都是我的错",
+            "真心道歉",
+            "请给我一个机会",
+            "对不起",
+            "求求你原谅我",
+            "骂我都可以",
+            "我一定会好好改正",
+            "请再相信一次我",
+            "我知道错了",
+            "非常抱歉",
+            "错了",
+            "真的很对不起",
+            "原谅可以吗",
+            "我是太CS了",
+            "以后不会让你伤心了",
+            "我一定会好好反省",
+            "以后一定不会再犯",
+            "求求你了",
+            "可以原谅我吗",
+            "真的错了李铭畅"
+        ];
+        
+        // 文字颜色
+        const textColors = [
+            "rgba(255, 255, 255, 0.9)",
+            "rgba(255, 220, 220, 0.9)",
+            "rgba(220, 240, 255, 0.9)",
+            "rgba(255, 255, 220, 0.9)",
+            "rgba(220, 255, 220, 0.9)"
+        ];
+        
+        // 初始化 - 页面加载立即创建文字
+        window.addEventListener('load', function() {
+            createStars();
+            initMusicPlayer();
+            
+            // 立即创建30个文字
+            for (let i = 0; i < 30; i++) {
+                createFloatingText(i * 200); // 错开时间
+            }
+            
+            // 持续添加新文字
+            setInterval(() => {
+                createFloatingText(0);
+            }, 1500);
+        });
+        
+        // 创建星空背景
+        function createStars() {
+            const starfield = document.getElementById('starfield');
+            const starCount = 150;
+            
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                
+                // 随机大小
+                const size = Math.random() * 2 + 1;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                
+                // 随机位置
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                
+                // 随机闪烁延迟
+                star.style.animationDelay = `${Math.random() * 5}s`;
+                
+                starfield.appendChild(star);
+            }
+        }
+        
+        // 创建单个飘动文字
+        function createFloatingText(delay = 0) {
+            const container = document.getElementById('floating-texts-container');
+            
+            // 创建文字元素
+            const textEl = document.createElement('div');
+            textEl.classList.add('floating-text');
+            
+            // 随机选择文字
+            const randomText = apologyWords[Math.floor(Math.random() * apologyWords.length)];
+            textEl.textContent = randomText;
+            
+            // 随机字体大小
+            const fontSize = Math.floor(Math.random() * 8) + 16;
+            textEl.style.fontSize = `${fontSize}px`;
+            
+            // 随机颜色
+            const color = textColors[Math.floor(Math.random() * textColors.length)];
+            textEl.style.color = color;
+            
+            // 随机水平起始位置
+            const startX = Math.random() * 90 + 5;
+            textEl.style.left = `${startX}%`;
+            
+            // 随机水平偏移
+            const endX = (Math.random() - 0.5) * 100;
+            textEl.style.setProperty('--end-x', `${endX}px`);
+            
+            // 随机动画时长
+            const duration = Math.random() * 15 + 20;
+            textEl.style.animationDuration = `${duration}s`;
+            
+            // 设置延迟
+            textEl.style.animationDelay = `${delay}ms`;
+            
+            // 动画结束后移除元素
+            textEl.addEventListener('animationend', function() {
+                if (this.parentNode) {
+                    this.parentNode.removeChild(this);
+                }
+            });
+            
+            container.appendChild(textEl);
+        }
+        
+        // 初始化音乐播放器
+        function initMusicPlayer() {
+            const audio = document.getElementById('backgroundMusic');
+            const playBtn = document.getElementById('playBtn');
+            const playIcon = document.getElementById('playIcon');
+            const volumeSlider = document.getElementById('volumeSlider');
+            const volumeBtn = document.getElementById('volumeBtn');
+            const volumeIcon = document.getElementById('volumeIcon');
+            
+            // 设置初始音量
+            audio.volume = volumeSlider.value / 100;
+            
+            // 播放/暂停按钮点击事件
+            playBtn.addEventListener('click', function() {
+                if (audio.paused) {
+                    audio.play();
+                    playIcon.className = 'fas fa-pause';
+                } else {
+                    audio.pause();
+                    playIcon.className = 'fas fa-play';
+                }
+            });
+            
+            // 音量滑块事件
+            volumeSlider.addEventListener('input', function() {
+                audio.volume = this.value / 100;
+                
+                // 更新音量图标
+                if (this.value == 0) {
+                    volumeIcon.className = 'fas fa-volume-mute';
+                } else if (this.value < 50) {
+                    volumeIcon.className = 'fas fa-volume-down';
+                } else {
+                    volumeIcon.className = 'fas fa-volume-up';
+                }
+            });
+            
+            // 音量按钮点击事件
+            volumeBtn.addEventListener('click', function() {
+                if (audio.volume > 0) {
+                    // 保存当前音量
+                    volumeSlider.dataset.previousVolume = volumeSlider.value;
+                    volumeSlider.value = 0;
+                    audio.volume = 0;
+                    volumeIcon.className = 'fas fa-volume-mute';
+                } else {
+                    // 恢复之前的音量
+                    const previousVolume = volumeSlider.dataset.previousVolume || 70;
+                    volumeSlider.value = previousVolume;
+                    audio.volume = previousVolume / 100;
+                    
+                    if (previousVolume < 50) {
+                        volumeIcon.className = 'fas fa-volume-down';
+                    } else {
+                        volumeIcon.className = 'fas fa-volume-up';
+                    }
+                }
+            });
+        }
+        
+        // 添加Font Awesome图标
+        const faLink = document.createElement('link');
+        faLink.rel = 'stylesheet';
+        faLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+        document.head.appendChild(faLink);
+    </script>
+</body>
+</html>
